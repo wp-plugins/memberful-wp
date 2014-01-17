@@ -47,7 +47,7 @@ Glad you asked! We manage development of the plugin over at the [Memberful WP Gi
 
 == Changelog ==
 
-= 1.1.2
+= 1.1.2 =
 * Ensure errors are shown to users when authentication fails
 
 = 1.1.1 =
