@@ -3,14 +3,14 @@
 Plugin Name: Memberful WP
 Plugin URI: http://github.com/memberful/memberful-wp
 Description: Sell memberships and restrict access to content with WordPress and Memberful.
-Version: 1.2.0
+Version: 1.3.0
 Author: Memberful
 Author URI: http://memberful.com
 License: GPLv2 or later
 */
 
 if ( ! defined( 'MEMBERFUL_VERSION' ) )
-	define( 'MEMBERFUL_VERSION', '1.2.0' );
+	define( 'MEMBERFUL_VERSION', '1.3.0' );
 
 if ( ! defined( 'MEMBERFUL_DIR' ) )
 	define( 'MEMBERFUL_DIR', dirname( __FILE__ ) );
@@ -22,7 +22,8 @@ if ( ! defined( 'MEMBERFUL_APPS_HOST' ) )
 	define( 'MEMBERFUL_APPS_HOST', 'https://apps.memberful.com' );
 
 // Should requests to memberful check the SSL certificate?
-define( 'MEMBERFUL_SSL_VERIFY', defined( 'SITE_ENVIRONMENT' ) ? SITE_ENVIRONMENT == 'production' : FALSE );
+if ( ! defined( 'MEMBERFUL_SSL_VERIFY' ) )
+	define( 'MEMBERFUL_SSL_VERIFY', TRUE );
 
 require_once MEMBERFUL_DIR . '/src/core-ext.php';
 require_once MEMBERFUL_DIR . '/src/urls.php';
@@ -37,6 +38,7 @@ require_once MEMBERFUL_DIR . '/src/endpoints.php';
 require_once MEMBERFUL_DIR . '/src/marketing_content.php';
 require_once MEMBERFUL_DIR . '/src/content_filter.php';
 require_once MEMBERFUL_DIR . '/src/entities.php';
+require_once MEMBERFUL_DIR . '/src/embed.php';
 require_once MEMBERFUL_DIR . '/vendor/reporting.php';
 
 register_activation_hook( __FILE__, 'memberful_wp_plugin_activate' );
@@ -56,7 +58,6 @@ function memberful_api_member( $member_id ) {
 	$response      = wp_remote_get( $url, array( 'sslverify' => MEMBERFUL_SSL_VERIFY ) );
 	$response_code = (int) wp_remote_retrieve_response_code( $response );
 	$response_body = wp_remote_retrieve_body( $response );
-
 
 	if ( is_wp_error( $response ) ) {
 		echo "Couldn't contact api: ";
