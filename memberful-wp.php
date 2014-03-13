@@ -3,14 +3,14 @@
 Plugin Name: Memberful WP
 Plugin URI: http://github.com/memberful/memberful-wp
 Description: Sell memberships and restrict access to content with WordPress and Memberful.
-Version: 1.3.1
+Version: 1.3.2
 Author: Memberful
 Author URI: http://memberful.com
 License: GPLv2 or later
 */
 
 if ( ! defined( 'MEMBERFUL_VERSION' ) )
-	define( 'MEMBERFUL_VERSION', '1.3.1' );
+	define( 'MEMBERFUL_VERSION', '1.3.2' );
 
 if ( ! defined( 'MEMBERFUL_DIR' ) )
 	define( 'MEMBERFUL_DIR', dirname( __FILE__ ) );
@@ -20,6 +20,9 @@ if ( ! defined( 'MEMBERFUL_URL' ) )
 
 if ( ! defined( 'MEMBERFUL_APPS_HOST' ) )
 	define( 'MEMBERFUL_APPS_HOST', 'https://apps.memberful.com' );
+
+if ( ! defined( 'MEMBERFUL_EMBED_HOST' ) )
+	define( 'MEMBERFUL_EMBED_HOST', 'https://d35xxde4fgg0cx.cloudfront.net');
 
 // Should requests to memberful check the SSL certificate?
 if ( ! defined( 'MEMBERFUL_SSL_VERIFY' ) )
@@ -55,7 +58,7 @@ function memberful_wp_plugin_activate() {
 function memberful_api_member( $member_id ) {
 	$url = memberful_wp_wrap_api_token( memberful_admin_member_url( $member_id, MEMBERFUL_JSON ) );
 
-	$response      = wp_remote_get( $url, array( 'sslverify' => MEMBERFUL_SSL_VERIFY ) );
+	$response	  = wp_remote_get( $url, array( 'sslverify' => MEMBERFUL_SSL_VERIFY ) );
 	$response_code = (int) wp_remote_retrieve_response_code( $response );
 	$response_body = wp_remote_retrieve_body( $response );
 
