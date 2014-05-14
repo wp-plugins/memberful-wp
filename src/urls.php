@@ -20,28 +20,47 @@ function memberful_account_url( $format = MEMBERFUL_HTML ) {
 	return memberful_url( 'account', $format );
 }
 
-function memberful_account_download_url( $product ) {
-	return memberful_url( 'account/downloads/get/'.memberful_wp_extract_id_from_slug( $product ) );
+function memberful_account_get_download_url( $download_slug ) {
+	return memberful_url( 'account/downloads/get/'.memberful_wp_extract_id_from_slug( $download_slug ) );
 }
 
 function memberful_admin_member_url( $member_id, $format = MEMBERFUL_HTML ) {
 	return memberful_url( 'admin/members/'.$member_id, $format );
 }
 
-function memberful_admin_products_url( $format = MEMBERFUL_HTML ) {
+function memberful_admin_downloads_url( $format = MEMBERFUL_HTML ) {
 	return memberful_url( 'admin/products', $format );
 }
 
-function memberful_admin_subscriptions_url( $format = MEMBERFUL_HTML ) {
+function memberful_admin_subscription_plans_url( $format = MEMBERFUL_HTML ) {
 	return memberful_url( 'admin/subscriptions', $format );
 }
 
 function memberful_admin_product_url( $product_id, $format = MEMBERFUL_HTML ) {
-	return memberful_url( 'admin/products/'.( int) $product_id, $format );
+	return memberful_admin_download_url( $product_id, $format );
+}
+
+function memberful_admin_download_url( $download_id, $format = MEMBERFUL_HTML ) {
+	return memberful_url( 'admin/products/'.( int) $download_id, $format );
 }
 
 function memberful_order_completed_url( $order ) {
 	return add_query_arg( 'id', $order, memberful_url( 'orders/completed' ) );
+}
+
+function memberful_wp_plugin_settings_url($no_header = FALSE, $subpage='') {
+	$header_parameter  = $no_header === TRUE ? "&noheader=true" : "";
+	$subpage_parameter = $subpage !== '' ? '&subpage='.$subpage : '';
+
+	return admin_url('options-general.php?page=memberful_options'.$header_parameter.$subpage_parameter);
+}
+
+function memberful_wp_plugin_bulk_protect_url($no_header = FALSE) {
+	return memberful_wp_plugin_settings_url($no_header, 'bulk_protect');
+}
+
+function memberful_wp_plugin_advanced_settings_url($no_header = FALSE) {
+	return memberful_wp_plugin_settings_url($no_header, 'advanced_settings');
 }
 
 
@@ -86,6 +105,14 @@ function memberful_frontend_protocol() {
 }
 
 function memberful_wp_wrap_api_token( $url ) {
+	if ( strpos($url, 'access_token') !== FALSE || strpos($url, 'auth_token') !== FALSE ) {
+		return $url;
+	}
+
+	if ( strpos($url, 'oauth/token') !== FALSE ) {
+		return $url;
+	}
+
 	return add_query_arg( 'auth_token', get_option( 'memberful_api_key' ), $url );
 }
 

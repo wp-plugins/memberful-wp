@@ -3,7 +3,7 @@ Contributors: matt-button, drewstrojny
 Tags: memberful, member, memberships, recurring payments, recurring billing, paywall, subscriptions, stripe, oauth, oauth2
 Requires at least: 3.6
 Tested up to: 3.8
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 
 Sell memberships and restrict access to content with WordPress and Memberful.
@@ -46,6 +46,19 @@ Glad you asked! We manage development of the plugin over at the [Memberful WP Gi
 3. Simple sign in and account management widget.
 
 == Changelog ==
+
+= 1.6.0 =
+* Improve how we handle the situation when a WP user account is created before Memberful member, then the Memberful member signs in.
+* Introduce role mapping (see options page for more details).
+* Add cron job for ensuring member profiles are kept up to date.
+* Deprecate old helpers and shortcodes that reference "products", see our documentation [on functions](https://memberful.com/help/integrate/services/wordpress/wordpress-functions/) and [shortcodes](https://memberful.com/help/integrate/services/wordpress/wordpress-shortcodes/) for new versions.
+* Allow admins to protect posts and pages in bulk. This will replace existing access rules for the posts and pages.
+* Show admins a message if cURL extension is not installed.
+* If the user signs into Memberful without using the overlay, and they weren't trying to access a specific page then the plugin used to send them to the Memberful account page. It now sends them to the WP homepage.
+* Allow plugins to add/remove links in profile widget using `memberful_wp_widget_args` filter.
+* Allow authors to see the content of shortcodes without purchasing required plans/products.
+* Improve the mapping of Memberful members to WP members in edge cases.
+* Allow author to remove current marketing text.
 
 = 1.5.0 =
 * Improve overlay's handling of members being signed into Memberful, but not WP.

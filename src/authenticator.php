@@ -1,17 +1,4 @@
 <?php
-require_once MEMBERFUL_DIR.'/src/user/oauth_map.php';
-require_once MEMBERFUL_DIR.'/src/user/products.php';
-require_once MEMBERFUL_DIR.'/src/user/subscriptions.php';
-
-
-/**
- * Is OAuth authentication enabled?
- *
- * @return boolean
- */
-function memberful_wp_oauth_enabled() {
-	return TRUE;
-}
 
 class Memberful_Authenticator {
 	/**
@@ -82,7 +69,7 @@ class Memberful_Authenticator {
 	 */
 	public function init( $user, $username, $password ) {
 		// If another authentication system has handled this request
-		if ( $user instanceof WP_User || ! memberful_wp_oauth_enabled() ) {
+		if ( $user instanceof WP_User ) {
 			return $user;
 		}
 
@@ -90,15 +77,12 @@ class Memberful_Authenticator {
 		if ( isset( $_GET['code'] ) ) {
 			$tokens = $this->get_oauth_tokens( $_GET['code'] );
 
-			$details = $this->get_member_data( $tokens->access_token );
+			$account = $this->get_member_data( $tokens->access_token );
 
-			$mapper = new Memberful_User_Oauth_Map;
-			$user   = $mapper->map( $details->member, $tokens->refresh_token );
-
-			Memberful_Wp_User_Products::sync($user->ID, $details->products);
-			Memberful_Wp_User_Subscriptions::sync($user->ID, $details->subscriptions);
-
-			return $user;
+			return memberful_wp_sync_member_account(
+				$account,
+				array( 'refresh_token' => $tokens->refresh_token )
+			);
 		} elseif ( isset( $_GET['error'] ) ) {
 			// For some reason we got an error code.
 			return $this->_error(
@@ -106,7 +90,6 @@ class Memberful_Authenticator {
 				$_GET['error']
 			);
 		}
-
 
 		// Store where the user came from in a cookie
 		$expire  = time() + ( 30 * 60 ); // 30 minutes
@@ -157,14 +140,7 @@ class Memberful_Authenticator {
 			'grant_type'    => 'authorization_code',
 			'code'          => $auth_code,
 		);
-		$response = wp_remote_post(
-			self::oauth_member_url( 'token' ),
-			array(
-				'body'      => $params,
-				'sslverify' => MEMBERFUL_SSL_VERIFY,
-				'timeout'   => 15
-			)
-		);
+		$response = memberful_wp_post_data_to_api_as_json( self::oauth_member_url('token'), 'get_oauth_tokens', $params );
 
 		if ( is_wp_error($response) ) {
 			return $this->_error( 'could_not_get_tokens', $response );
@@ -193,12 +169,9 @@ class Memberful_Authenticator {
 	public function get_member_data( $access_token ) {
 		$url = memberful_account_url( MEMBERFUL_JSON );
 
-		$response = wp_remote_get(
+		$response = memberful_wp_get_data_from_api(
 			add_query_arg( 'access_token', $access_token, $url ),
-			array(
-				'sslverify' => MEMBERFUL_SSL_VERIFY,
-				'timeout'   => 15
-			)
+			'get_member_data_for_sign_in'
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -218,3 +191,27 @@ class Memberful_Authenticator {
 
 // Backup, prevent members from resetting their password
 add_filter( 'allow_password_reset', array( 'Memberful_Authenticator', 'audit_password_reset' ), 50, 2 );
+add_filter( 'login_message', 'memberful_wp_display_check_account_message' );
+add_filter( 'wp_login', 'memberful_wp_link_accounts_if_appropriate', 10, 2 );
+
+function memberful_wp_display_check_account_message() {
+	if ( isset($_GET['memberful_account_check']) ) {
+		return '<p>'.__('It looks like have an account on this site which Memberful didn\'t create. Please sign in using your WP login so that we can sync your accounts up').'</p>';
+	}
+}
+
+function memberful_wp_link_accounts_if_appropriate($username, $user) {
+
+	if ( isset($_COOKIE['memberful_account_link_nonce']) ) { 
+		if ( $user->has_prop( 'memberful_potential_member_mapping' ) ) {
+			$potential_mapping = $user->get( 'memberful_potential_member_mapping' );
+
+			if ( $potential_mapping['member']->email === $user->user_email && $_COOKIE['memberful_account_link_nonce'] === $potential_mapping['nonce'] ) {
+				memberful_wp_sync_member_from_memberful( $potential_mapping['member']->id, $potential_mapping['context'] );
+			}
+		}
+
+		delete_user_meta( $user->ID, 'memberful_potential_member_mapping' );
+		setcookie('memberful_account_link_nonce', '', time()-3600, COOKIEPATH, COOKIE_DOMAIN, false, true);
+	}
+}
