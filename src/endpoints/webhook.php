@@ -1,5 +1,4 @@
 <?php
-require_once MEMBERFUL_DIR.'/src/webhook_ping.php';
 
 /**
  * Handles POST requests to the webhook endpoint
@@ -11,33 +10,26 @@ class Memberful_Wp_Endpoint_Webhook implements Memberful_Wp_Endpoint {
 	}
 
 	public function process( array $request_params, array $server_params ) {
-		$pinger = new Memberful_Wp_Webhook_Ping( get_option( 'memberful_webhook_secret' ) );
+		$member  = NULL;
+		$payload = json_decode($this->raw_request_body());
 
-		try {
+		if ( strpos( $payload->event, 'order' ) !== FALSE ) {
+			$member = (int) $payload->order->member->id;
 
-			$pinger->handle_ping(
-				$this->raw_request_body(),
-				$this->request_webhook_digest( $server_params )
-			);
+			echo 'Processing order webhook for member '.$member;
+		} elseif ( strpos( $payload->event, 'member' ) !== FALSE ) {
+			$member = (int) $payload->member->id;
 
-			echo "ok";
-
-		} catch ( Memberful_Wp_Ping_Invalid_Digest $e ) {
-			header("Status: 401 Unauthorized");
-			echo "Digest could not be validated\n";
-			echo $e->getMessage();
-		} catch ( Memberful_Wp_Ping_Invalid_Payload $e ) {
-			header('Status: 400 Bad Request');
-			echo "Payload could not be parsed\n";
-			echo $e->getMessage();
+			echo 'Processing member webhook for member '.$member;
+		} else {
+			echo 'Ignoring webhook';
 		}
+
+		if ( $member !== NULL )
+			memberful_wp_sync_member_from_memberful( $member );
 	}
 
 	private function raw_request_body() {
 		return file_get_contents( 'php://input' );
-	}
-
-	private function request_webhook_digest($server) {
-		return $server['HTTP_X_MEMBERFUL_WEBHOOK_DIGEST'];
 	}
 }

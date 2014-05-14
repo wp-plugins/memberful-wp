@@ -14,6 +14,24 @@ class Memberful_User_Map {
 		return $wpdb->prefix.'memberful_mapping';
 	}
 
+	static public function fetch_ids_of_members_that_need_syncing() {
+		global $wpdb;
+
+		$sync_cut_off_point = 3600 * 24 * 7;
+
+		return $wpdb->get_col(
+			"SELECT member_id FROM ".self::table()." WHERE last_sync_at < ".(time()-$sync_cut_off_point)." AND wp_user_id > 0 ORDER BY last_sync_at ASC LIMIT 50"
+		);
+	}
+
+	static public function fetch_user_ids_of_all_mapped_members() {
+		global $wpdb;
+
+		return $wpdb->get_col(
+			"SELECT wp_user_id FROM ".self::table()." WHERE wp_user_id > 0;"
+		);
+	}
+
 	/**
 	 * Takes a set of Memberful member details and tries to associate it with the
 	 * WordPress user account.
@@ -24,20 +42,35 @@ class Memberful_User_Map {
 	public function map( $member, array $mapping = array() ) {
 		list( $user_id, $user_mapping_exists ) = $this->find_user( $member );
 
-		$user_exists = $user_id !== NULL;
+		$user_exists = $user_id !== NULL && get_user_by('id', $user_id) !== FALSE;
 
 		if ( $user_exists && ! $user_mapping_exists ) {
 			if ( ! is_user_logged_in() ) {
-				wp_safe_redirect( admin_url() );
-				wp_die( "Found a WordPress user for this member, but Memberful did not create the WordPress user. Please contact the site administrator." );
+				$nonce = bin2hex(openssl_random_pseudo_bytes(32));
+
+				update_user_meta(
+					$user_id,
+					'memberful_potential_member_mapping',
+					array(
+						'nonce'   => $nonce,
+						'member'  => $member,
+						'context' => $mapping,
+					)
+				);
+
+				setcookie('memberful_account_link_nonce', $nonce, time()+3600, COOKIEPATH, COOKIE_DOMAIN, false, true);
+
+				wp_safe_redirect(
+					add_query_arg( 'memberful_account_check', '1', wp_login_url() )
+			   	);
+				die();
 			} else {
 				$current_user       = wp_get_current_user();
 				$current_user_email = $current_user->user_email;
 
 				// Check the logged in user's email address against the Memberful email address
 				if ( $current_user_email !== $member->email ) {
-					wp_safe_redirect( admin_url() );
-					wp_die( "Found a WordPress user for this member, but Memberful did not create the WordPress user. Please contact the site administrator." );
+					wp_die( __( "It looks like Memberful didn't create your user on this WordPress site. Please make sure you're signed in as your WordPress user, then sign in through Memberful" ));
 				}
 			}
 		}
