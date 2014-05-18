@@ -5,7 +5,7 @@ class Memberful_Wp_User_Role_Decision {
 		$decision = new Memberful_Wp_User_Role_Decision();
 
 		$new_role = $decision->role_for_user(
-			$user->role,
+			reset( $user->roles ),
 			memberful_wp_user_plans_subscribed_to( $user->ID )
 		);
 
@@ -20,7 +20,7 @@ class Memberful_Wp_User_Role_Decision {
 		$roles_memberful_is_allowed_to_change_from = array(
 			$active_role,
 			$inactive_role,
-			'subscriber'
+			get_option( 'default_role', 'subscriber' )
 		);
 
 		if ( ! in_array( $current_role, $roles_memberful_is_allowed_to_change_from ) ) {
