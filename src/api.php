@@ -8,10 +8,7 @@ define( 'MEMBERFUL_API_USER_AGENT', 'WordPress/'.$wp_version.' (PHP '.phpversion
  * TODO: Clean this mess up.
  */
 function memberful_api_member( $member_id ) {
-	$response = memberful_wp_get_data_from_api(
-		memberful_admin_member_url( $member_id, MEMBERFUL_JSON ),
-		'fetch_member_account_from_admin'
-	);
+	$response = memberful_wp_get_data_from_api( memberful_admin_member_url( $member_id, MEMBERFUL_JSON ) );
 
 	$response_code = (int) wp_remote_retrieve_response_code( $response );
 	$response_body = wp_remote_retrieve_body( $response );
@@ -30,7 +27,7 @@ function memberful_api_member( $member_id ) {
 	return json_decode( $response_body );
 }
 
-function memberful_wp_get_data_from_api( $url, $caller ) {
+function memberful_wp_get_data_from_api( $url ) {
 	$url = memberful_wp_wrap_api_token( $url );
 
 	$request = array(
@@ -44,12 +41,12 @@ function memberful_wp_get_data_from_api( $url, $caller ) {
 
 	$response = wp_remote_get( $url, $request );
 
-	memberful_wp_instrument_api_call( $url, $request, $response, $caller );
+	memberful_wp_instrument_api_call( $url, $request, $response );
 
 	return $response;
 }
 
-function memberful_wp_post_data_to_api_as_json( $url, $caller, $data ) {
+function memberful_wp_post_data_to_api_as_json( $url, $data ) {
 	$url        = memberful_wp_wrap_api_token( $url );
 	$request    = array(
 		'method'  => 'POST',
@@ -65,12 +62,12 @@ function memberful_wp_post_data_to_api_as_json( $url, $caller, $data ) {
 
 	$response = wp_remote_post( $url, $request );
 
-	memberful_wp_instrument_api_call( $url, $request, $response, $caller );
+	memberful_wp_instrument_api_call( $url, $request, $response );
 
 	return $response;
 }
 
-function memberful_wp_put_data_to_api_as_json( $url, $caller, $data ) {
+function memberful_wp_put_data_to_api_as_json( $url, $data ) {
 	$url        = memberful_wp_wrap_api_token( $url );
 	$request    = array(
 		'method'  => 'PUT',
@@ -86,12 +83,12 @@ function memberful_wp_put_data_to_api_as_json( $url, $caller, $data ) {
 
 	$response = wp_remote_post( $url, $request );
 
-	memberful_wp_instrument_api_call( $url, $request, $response, $caller );
+	memberful_wp_instrument_api_call( $url, $request, $response );
 
 	return $response;
 }
 
-function memberful_wp_instrument_api_call( $url, $request, $response, $caller ) {
+function memberful_wp_instrument_api_call( $url, $request, $response ) {
 	$error_payload = NULL;
 
 	if ( is_wp_error( $response ) ) {
@@ -105,8 +102,7 @@ function memberful_wp_instrument_api_call( $url, $request, $response, $caller ) 
 	}
 
 	if ( $error_payload !== NULL ) {
-		$error_payload['caller']     = $caller;
-		$error_payload['url']        = $url;
+		$error_payload['url']       = $url;
 		$error_payload['sslverify'] = $request['sslverify'];
 
 		memberful_wp_record_error( $error_payload );
@@ -140,10 +136,22 @@ function memberful_wp_error_log() {
 }
 
 function memberful_wp_record_error( $new_payload ) {
-	$error_log = get_option( 'memberful_error_log', array() );
+	if ( ! isset( $new_payload['caller'] ) ) {
+		$new_payload['caller'] = array_map('memberful_wp_strip_args_from_backtrace', array_slice(debug_backtrace(), 1, 10));
+	}
 
+	return memberful_wp_store_error( $new_payload );
+}
+
+function memberful_wp_strip_args_from_backtrace( $line ) {
+	unset($line['args']);
+
+	return $line;
+}
+
+function memberful_wp_store_error( $new_payload ) {
 	// Try not to overload the WP options table with errors!
-	$error_log = array_slice( $error_log, 0, 100, TRUE );
+	$error_log = array_slice( memberful_wp_error_log(), 0, 99, TRUE );
 
 	array_unshift( $error_log, $new_payload );
 
