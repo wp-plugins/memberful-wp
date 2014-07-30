@@ -108,7 +108,7 @@ class Memberful_User_Map {
 				// by something else, whereas here we're working around the error.
 				memberful_wp_record_wp_error( $outcome_of_mapping );
 
-				wp_delete_user( $user_id );
+				wp_delete_user( $wp_user->ID );
 
 				$error_data = $outcome_of_mapping->get_error_data();
 
@@ -167,26 +167,23 @@ class Memberful_User_Mapping_Ensure_User {
 		$user_data = array();
 
 		if ( $this->wp_user !== FALSE ) {
-			$user_data['ID'] = $this->wp_user->ID;
+			$user_data['ID']            = $this->wp_user->ID;
+			$user_data['user_login']    = $this->wp_user->user_login;
+			$user_data['user_nicename'] = $this->wp_user->user_nicename;
+			$user_data['nickname']      = $this->wp_user->nickname;
+			$user_data['display_name']  = $this->wp_user->display_name;
 		} else {
-			$user_data['user_pass'] = wp_generate_password();
+			$user_data['user_pass']               = wp_generate_password();
 			$user_data['show_admin_bar_frontend'] = FALSE;
+			$user_data['user_login']              = $this->member->username;
+			$user_data['user_nicename']           = $this->member->username;
+			$user_data['nickname']                = $this->member->full_name;
+			$user_data['display_name']            = $this->member->full_name;
 		}
 
-		// Mapping of WordPress => Memberful keys
-		$field_map = array(
-			'user_email'    => 'email',
-			'user_login'    => 'username',
-			'display_name'  => 'full_name',
-			'user_nicename' => 'username',
-			'nickname'      => 'full_name',
-			'first_name'    => 'first_name',
-			'last_name'     => 'last_name'
-		);
-
-		foreach ( $field_map as $key => $value ) {
-			$user_data[$key] = $this->member->$value;
-		}
+		$user_data['user_email'] = $this->member->email;
+		$user_data['first_name'] = $this->member->first_name;
+		$user_data['last_name']  = $this->member->last_name;
 
 		return $user_data;
 	}
