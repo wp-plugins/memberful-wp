@@ -3,14 +3,14 @@
 Plugin Name: Memberful WP
 Plugin URI: http://github.com/memberful/memberful-wp
 Description: Sell memberships and restrict access to content with WordPress and Memberful.
-Version: 1.12.1
+Version: 1.13.0
 Author: Memberful
 Author URI: http://memberful.com
 License: GPLv2 or later
 */
 
 if ( ! defined( 'MEMBERFUL_VERSION' ) )
-	define( 'MEMBERFUL_VERSION', '1.12.1' );
+	define( 'MEMBERFUL_VERSION', '1.13.0' );
 
 if ( ! defined( 'MEMBERFUL_DIR' ) )
 	define( 'MEMBERFUL_DIR', dirname( __FILE__ ) );
@@ -32,6 +32,7 @@ require_once MEMBERFUL_DIR . '/src/core-ext.php';
 require_once MEMBERFUL_DIR . '/src/cron.php';
 require_once MEMBERFUL_DIR . '/src/urls.php';
 require_once MEMBERFUL_DIR . '/src/user/map.php';
+require_once MEMBERFUL_DIR . '/src/user/meta.php';
 require_once MEMBERFUL_DIR . '/src/user/role_decision.php';
 require_once MEMBERFUL_DIR . '/src/authenticator.php';
 require_once MEMBERFUL_DIR . '/src/admin.php';
