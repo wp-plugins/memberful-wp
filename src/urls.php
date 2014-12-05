@@ -52,6 +52,18 @@ function memberful_order_completed_url( $order ) {
 	return add_query_arg( 'id', $order, memberful_url( 'orders/completed' ) );
 }
 
+function memberful_checkout_for_subscription_url( $plan_id ) {
+	return add_query_arg( 'plan', $plan_id, memberful_url( 'checkout' ) );
+}
+
+function memberful_checkout_for_download_url( $download_id ) {
+	return add_query_arg( 'download', $download_id, memberful_url( 'checkout' ) );
+}
+
+function memberful_wp_update_plugin_settings_on_memberful_url() {
+	return memberful_url( 'admin/settings/integrate/website/wordpress' );
+}
+
 function memberful_wp_plugin_settings_url($no_header = FALSE, $subpage='') {
 	$header_parameter  = $no_header === TRUE ? "&noheader=true" : "";
 	$subpage_parameter = $subpage !== '' ? '&subpage='.$subpage : '';
@@ -67,6 +79,9 @@ function memberful_wp_plugin_advanced_settings_url($no_header = FALSE) {
 	return memberful_wp_plugin_settings_url($no_header, 'advanced_settings');
 }
 
+function memberful_wp_plugin_protect_bbpress_url($no_header = FALSE) {
+	return memberful_wp_plugin_settings_url($no_header, 'protect_bbpress');
+}
 
 /**
  * Generate a URL to the Memberful site
