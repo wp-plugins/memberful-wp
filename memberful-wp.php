@@ -3,14 +3,17 @@
 Plugin Name: Memberful WP
 Plugin URI: http://github.com/memberful/memberful-wp
 Description: Sell memberships and restrict access to content with WordPress and Memberful.
-Version: 1.14.0
+Version: 1.15.0
 Author: Memberful
 Author URI: http://memberful.com
 License: GPLv2 or later
 */
 
 if ( ! defined( 'MEMBERFUL_VERSION' ) )
-	define( 'MEMBERFUL_VERSION', '1.14.0' );
+	define( 'MEMBERFUL_VERSION', '1.15.0' );
+
+if ( ! defined( 'MEMBERFUL_PLUGIN_FILE' ) )
+	define( 'MEMBERFUL_PLUGIN_FILE', __FILE__ );
 
 if ( ! defined( 'MEMBERFUL_DIR' ) )
 	define( 'MEMBERFUL_DIR', dirname( __FILE__ ) );
@@ -36,6 +39,7 @@ require_once MEMBERFUL_DIR . '/src/user/meta.php';
 require_once MEMBERFUL_DIR . '/src/user/role_decision.php';
 require_once MEMBERFUL_DIR . '/src/authenticator.php';
 require_once MEMBERFUL_DIR . '/src/admin.php';
+require_once MEMBERFUL_DIR . '/src/admin/editor.php';
 require_once MEMBERFUL_DIR . '/src/acl.php';
 require_once MEMBERFUL_DIR . '/src/activator.php';
 require_once MEMBERFUL_DIR . '/src/shortcodes.php';
@@ -48,6 +52,8 @@ require_once MEMBERFUL_DIR . '/src/embed.php';
 require_once MEMBERFUL_DIR . '/src/api.php';
 require_once MEMBERFUL_DIR . '/src/roles.php';
 require_once MEMBERFUL_DIR . '/src/syncing.php';
+require_once MEMBERFUL_DIR . '/src/logout_hooks.php';
+require_once MEMBERFUL_DIR . '/src/contrib/bbpress.php';
 require_once MEMBERFUL_DIR . '/vendor/reporting.php';
 
 register_activation_hook( __FILE__, 'memberful_wp_plugin_activate' );

@@ -3,11 +3,13 @@
 require_once MEMBERFUL_DIR . '/src/options.php';
 require_once MEMBERFUL_DIR . '/src/metabox.php';
 
+add_action( 'admin_head',            'memberful_wp_announce_plans_and_download_in_head' );
 add_action( 'admin_menu',            'memberful_wp_menu' );
 add_action( 'admin_init',            'memberful_wp_register_options' );
 add_action( 'admin_init',            'memberful_wp_activation_redirect' );
 add_action( 'admin_init',            'memberful_wp_plugin_migrate_db' );
 add_action( 'admin_enqueue_scripts', 'memberful_wp_admin_enqueue_scripts' );
+add_filter( 'display_post_states',   'memberful_wp_add_protected_state_to_post_list', 10, 2 );
 
 /**
  * Ensures the database is up to date
@@ -253,6 +255,8 @@ function memberful_wp_options() {
 				return memberful_wp_debug();
 			case 'advanced_settings':
 				return memberful_wp_advanced_settings();
+			case 'protect_bbpress':
+				return memberful_wp_protect_bbpress();
 		}
 	}
 
@@ -389,4 +393,80 @@ function memberful_wp_bulk_protect() {
 			'form_target'       => memberful_wp_plugin_bulk_protect_url(TRUE),
 		)
 	);
+}
+
+function memberful_wp_protect_bbpress() {
+	if ( ! empty( $_POST ) ) {
+		$protection_enabled     = empty( $_POST['memberful_protect_bbpress'] ) ? FALSE : ( $_POST['memberful_protect_bbpress'] == '1');
+		$required_downloads     = empty( $_POST['memberful_product_acl'] ) ? array() : (array) $_POST['memberful_product_acl'];
+		$required_subscription_plans = empty( $_POST['memberful_subscription_acl'] ) ? array() : (array) $_POST['memberful_subscription_acl'];
+		$viewable_by_any_user   = empty( $_POST['memberful_viewable_by_any_registered_users'] ) ? FALSE : ($_POST['memberful_viewable_by_any_registered_users'] == '1');
+		$redirect_to_homepage   = empty( $_POST['memberful_send_unauthorized_users'] ) ? TRUE : ($_POST['memberful_send_unauthorized_users'] == 'homepage');
+		$redirect_to_url        = empty( $_POST['memberful_send_unauthorized_users_to_url'] ) ? '' : $_POST['memberful_send_unauthorized_users_to_url'];
+
+		if ( ! empty( $required_subscription_plans ) )
+			$required_subscription_plans = array_combine( $required_subscription_plans, $required_subscription_plans );
+
+		if ( ! empty( $required_downloads ) )
+			$required_downloads = array_combine( $required_downloads, $required_downloads );
+
+		memberful_wp_bbpress_update_send_unauthorized_users_to_homepage( $redirect_to_homepage );
+		memberful_wp_bbpress_update_protect_forums( $protection_enabled );
+		memberful_wp_bbpress_update_restricted_to_registered_user( $viewable_by_any_user );
+		memberful_wp_bbpress_update_required_downloads( $required_downloads );
+		memberful_wp_bbpress_update_required_subscription_plans( $required_subscription_plans );
+		memberful_wp_bbpress_update_send_unauthorized_users_to_url( $redirect_to_url );
+
+		wp_redirect( memberful_wp_plugin_protect_bbpress_url() );
+	}
+
+	$plans     = memberful_subscription_plans();
+	$downloads = memberful_downloads();
+
+	$required_subscription_plans = memberful_wp_bbpress_required_subscription_plans();
+	$required_downloads     = memberful_wp_bbpress_required_downloads();
+
+	foreach( $plans as $id => $plan ) {
+		$plans[$id]['checked'] = isset($required_subscription_plans[$id]);
+	}
+
+	foreach( $downloads as $id => $download ) {
+		$downloads[$id]['checked'] = isset($required_downloads[$id]);
+	}
+
+	memberful_wp_render(
+		'protect_bbpress',
+		array(
+			'protect_bbpress'                     => memberful_wp_bbpress_protect_forums(),
+			'restricted_to_registered_users'      => memberful_wp_bbpress_restricted_to_registered_users(),
+			'plans'                               => $plans,
+			'downloads'                           => $downloads,
+			'send_unauthorized_users_to_homepage' => memberful_wp_bbpress_send_unauthorized_users_to_homepage(),
+			'send_unauthorized_users_to_url'      => memberful_wp_bbpress_send_unauthorized_users_to_url(),
+			'form_target'                         => memberful_wp_plugin_protect_bbpress_url( TRUE ),
+		)
+	);
+}
+
+function memberful_wp_announce_plans_and_download_in_head() {
+	memberful_wp_render(
+		'js_vars',
+		array(
+			'data' => array(
+				'plans' => array_values(memberful_subscription_plans()),
+				'downloads' => array_values(memberful_downloads()),
+				'connectedToMemberful' => memberful_wp_is_connected_to_site(),
+			)
+		)
+	);
+}
+
+function memberful_wp_add_protected_state_to_post_list($states, $post) {
+	$ids_of_protected_posts = memberful_wp_posts_that_are_protected();
+
+	if ( isset( $ids_of_protected_posts[ $post->ID ] ) ) {
+		$states[] = __('Protected by Memberful');
+	}
+
+	return $states;
 }
